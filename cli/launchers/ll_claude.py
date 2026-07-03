@@ -9,6 +9,7 @@ Usage:
 
 from __future__ import annotations
 
+import base64
 import os
 import shutil
 import subprocess
@@ -179,14 +180,23 @@ def _open_specialist_tabs(
 
     has_wt = shutil.which("wt") is not None
 
-    def _make_env_block(name: str) -> str:
-        """PowerShell snippet that sets env vars for a specialist."""
+    def _encode_command(ps_script: str) -> str:
+        """Encode a PowerShell script as Base64 for -EncodedCommand."""
+        return base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
+
+    def _make_ps_script(name: str, work_dir: Path) -> str:
         token = f"{base_token}:{name.lower()}"
         return (
-            f"$env:ANTHROPIC_BASE_URL = '{proxy_root_url}'; "
-            f"$env:ANTHROPIC_AUTH_TOKEN = '{token}'; "
-            f"$env:CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = '1'; "
-            f"$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = '{CLAUDE_CODE_AUTO_COMPACT_WINDOW}'; "
+            f"$env:ANTHROPIC_BASE_URL = '{proxy_root_url}'\n"
+            f"$env:ANTHROPIC_AUTH_TOKEN = '{token}'\n"
+            f"$env:CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = '1'\n"
+            f"$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = '{CLAUDE_CODE_AUTO_COMPACT_WINDOW}'\n"
+            f"Set-Location '{work_dir}'\n"
+            f"Write-Host '=== {name} ===' -ForegroundColor Green\n"
+            f"Write-Host 'Quadro: {board}' -ForegroundColor Yellow\n"
+            f"Write-Host 'Diga: Read AGENT_CONTEXT.md' -ForegroundColor Yellow\n"
+            f"Write-Host ''\n"
+            f"claude\n"
         )
 
     if has_wt:
@@ -195,19 +205,9 @@ def _open_specialist_tabs(
         for i, (name, _role) in enumerate(specialists):
             work_dir = session / f"agent_{i + 1}_{name.lower()}"
             work_dir.mkdir(parents=True, exist_ok=True)
-
-            env_block = _make_env_block(name)
-            startup = (
-                f"{env_block}"
-                f"cd '{work_dir}'; "
-                f"Write-Host '=== {name} ===' -ForegroundColor Green; "
-                f"Write-Host 'Quadro: {board}' -ForegroundColor Yellow; "
-                f"Write-Host 'Diga: Read AGENT_CONTEXT.md' -ForegroundColor Yellow; "
-                f"Write-Host ''; "
-                f"claude"
-            )
+            encoded = _encode_command(_make_ps_script(name, work_dir))
             wt_args += [";", "new-tab", "--title", name,
-                        "pwsh", "-NoExit", "-Command", startup]
+                        "pwsh", "-NoExit", "-EncodedCommand", encoded]
 
         subprocess.Popen(wt_args, shell=False)
 
@@ -216,16 +216,9 @@ def _open_specialist_tabs(
         for i, (name, _role) in enumerate(specialists):
             work_dir = session / f"agent_{i + 1}_{name.lower()}"
             work_dir.mkdir(parents=True, exist_ok=True)
-
-            env_block = _make_env_block(name)
-            startup = (
-                f"{env_block}"
-                f"cd '{work_dir}'; "
-                f"Write-Host '=== {name} ===' -ForegroundColor Green; "
-                f"claude"
-            )
+            encoded = _encode_command(_make_ps_script(name, work_dir))
             subprocess.Popen(
-                ["powershell", "-NoExit", "-Command", startup],
+                ["powershell", "-NoExit", "-EncodedCommand", encoded],
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
             )
 
