@@ -179,6 +179,8 @@ def _open_specialist_tabs(
     """Open one Windows Terminal tab per specialist agent."""
 
     has_wt = shutil.which("wt") is not None
+    # Prefer PowerShell 7 (pwsh) but fall back to Windows PowerShell 5 (powershell)
+    ps_exe = "pwsh" if shutil.which("pwsh") else "powershell"
 
     def _encode_command(ps_script: str) -> str:
         """Encode a PowerShell script as Base64 for -EncodedCommand."""
@@ -207,7 +209,7 @@ def _open_specialist_tabs(
             work_dir.mkdir(parents=True, exist_ok=True)
             encoded = _encode_command(_make_ps_script(name, work_dir))
             wt_args += [";", "new-tab", "--title", name,
-                        "pwsh", "-NoExit", "-EncodedCommand", encoded]
+                        ps_exe, "-NoExit", "-EncodedCommand", encoded]
 
         subprocess.Popen(wt_args, shell=False)
 
@@ -218,7 +220,7 @@ def _open_specialist_tabs(
             work_dir.mkdir(parents=True, exist_ok=True)
             encoded = _encode_command(_make_ps_script(name, work_dir))
             subprocess.Popen(
-                ["powershell", "-NoExit", "-EncodedCommand", encoded],
+                [ps_exe, "-NoExit", "-EncodedCommand", encoded],
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
             )
 
