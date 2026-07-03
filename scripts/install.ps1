@@ -411,6 +411,17 @@ Invoke-InstallCommand -FilePath "uv" -Arguments @("python", "install", $PythonVe
 Write-Step "Installing or updating Free Claude Code"
 Install-FreeClaudeCode
 
+# Add uv tool scripts dir to PATH permanently
+$uvToolScripts = Join-Path (uv tool dir) "free-claude-code\Scripts"
+if (Test-Path $uvToolScripts) {
+    $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($userPath -notlike "*$uvToolScripts*") {
+        [Environment]::SetEnvironmentVariable("PATH", "$uvToolScripts;$userPath", "User")
+        $env:Path = "$uvToolScripts;$env:Path"
+        Write-Host "PATH atualizado: $uvToolScripts"
+    }
+}
+
 Write-Host ""
 Write-Host ""
 Write-Host "Instalado! Inicie o proxy com:     ll-server"
