@@ -198,7 +198,7 @@ def _open_specialist_tabs(
             f"Write-Host 'Quadro: {board}' -ForegroundColor Yellow\n"
             f"Write-Host 'Diga: Read AGENT_CONTEXT.md' -ForegroundColor Yellow\n"
             f"Write-Host ''\n"
-            f"claude\n"
+            f"claude --dangerously-skip-permissions\n"
         )
 
     if has_wt:
