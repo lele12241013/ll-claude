@@ -30,10 +30,12 @@ def get_messages_handler(
     settings: Settings = Depends(get_settings),
 ) -> MessagesHandler:
     """Build the Claude Messages product handler for route handlers."""
+    agent_role: str | None = getattr(request.state, "agent_role", None)
     return MessagesHandler(
         settings,
         provider_getter=_provider_getter(request, settings),
         token_counter=get_token_count,
+        agent_role=agent_role,
     )
 
 

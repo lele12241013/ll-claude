@@ -72,83 +72,81 @@ Free Claude Code routes Anthropic Messages API traffic from Claude Code (CLI and
 
 ### 1. Install/Update The Proxy
 
+> **Substitua `lele12241013/ll-claude` pelo seu repositório GitHub antes de usar.**
+
 macOS/Linux:
 
 ```bash
-curl -fsSL "https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/install.sh?raw=1" | sh
+curl -fsSL "https://github.com/lele12241013/ll-claude/blob/main/scripts/install.sh?raw=1" | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm "https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/install.ps1?raw=1" | iex
+irm "https://github.com/lele12241013/ll-claude/blob/main/scripts/install.ps1?raw=1" | iex
 ```
 
-Review the installers at [scripts/install.sh](https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/install.sh) and [scripts/install.ps1](https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/install.ps1). They install Claude Code and Codex when missing, then install or update the proxy. Re-run these commands to update to the latest version.
+They install Claude Code and Codex when missing, then install or update the proxy. Re-run to update.
 
-To remove only Free Claude Code (not uv, Claude Code, Codex, or the uv-managed Python runtime):
+To remove only this tool (not uv, Claude Code, Codex, or the uv-managed Python runtime):
 
 macOS/Linux:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Alishahryar1/free-claude-code/main/scripts/uninstall.sh" | sh
+curl -fsSL "https://raw.githubusercontent.com/lele12241013/ll-claude/main/scripts/uninstall.sh" | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm "https://raw.githubusercontent.com/Alishahryar1/free-claude-code/main/scripts/uninstall.ps1" | iex
+irm "https://raw.githubusercontent.com/lele12241013/ll-claude/main/scripts/uninstall.ps1" | iex
 ```
 
-Review [scripts/uninstall.sh](https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/uninstall.sh) and [scripts/uninstall.ps1](https://github.com/Alishahryar1/free-claude-code/blob/main/scripts/uninstall.ps1). They remove the FCC uv tool and always delete `~/.fcc/`. Stop any running `fcc-server`, `fcc-claude`, `fcc-codex`, `fcc-init`, or `free-claude-code` process before uninstalling.
+Stop any running `ll-server` or `ll-claude` process before uninstalling.
 
 ### 2. Start The Proxy
 
 ```bash
-fcc-server
+ll-server
 ```
 
-After startup, Uvicorn prints the proxy bind address and the app logs the admin URL:
+After startup, the app logs the admin URL:
 
 ```text
 INFO:     Admin UI: http://127.0.0.1:8082/admin (local-only)
 ```
 
-Many terminals make these clickable. Use your configured `PORT` if it is not `8082`.
+### 3. Open The Admin UI And Configure Your Provider
 
-### 3. Open The Admin UI And Configure NVIDIA NIM
-
-Open the **Admin UI** URL from the terminal output.
-
-Need an NVIDIA NIM API key? Use the **[NVIDIA NIM provider](#nvidia-nim-provider)** section below, then scroll back up here.
+Open the **Admin UI** URL from the terminal output. Configure your API key, model, and — in the **Agentes Especialistas** section — a different model per agent role.
 
 <div align="center">
   <img src="assets/admin-page.png" alt="Local admin UI for proxy settings" width="700">
 </div>
 
-Paste your NVIDIA NIM API key into `NVIDIA_NIM_API_KEY`, then click **Validate** and **Apply**.
+### 4. Run The Multi-Agent System
 
-The default model is already set to `nvidia_nim/nvidia/nemotron-3-super-120b-a12b`. You can change it later from the same Admin UI.
+Keep `ll-server` running while you work.
 
-### 4. Run Your Coding Agent
+**Multi-Agent (Orchestrator + 6 specialists)**
 
-Keep `fcc-server` running while you work.
+```bash
+ll-claude
+```
 
-**Claude Code**
+`ll-claude` launches the **Orquestrador** in the current terminal and automatically opens the 6 specialist agents (Frontend, Backend, Revisor, Testador, Documentador, Executor) in separate Windows Terminal tabs. Each agent uses its own configured model from the Admin UI.
+
+To resume the last session:
+
+```bash
+ll-claude --resume
+```
+
+**Single agent (classic mode)**
 
 ```bash
 fcc-claude
 ```
-
-`fcc-claude` reads the current configured port and auth token each time it starts, sets the Claude Code environment variables (including a 190k-token `CLAUDE_CODE_AUTO_COMPACT_WINDOW` for auto-compaction), and then launches the real `claude` command. When proxy auth is disabled, it still passes `ANTHROPIC_AUTH_TOKEN=fcc-no-auth` so newer Claude Code versions do not stop at their local login gate before contacting the proxy.
-
-**Codex**
-
-```bash
-fcc-codex
-```
-
-`fcc-codex` reads the same port and auth token, registers an ephemeral `fcc` model provider that points at the local proxy's `/v1/responses` endpoint, generates a Codex model catalog from the proxy's `/v1/models` response, sets `FCC_CODEX_API_KEY` from the Admin UI auth token, strips official `OPENAI_*` credentials from the child environment, and then launches the real `codex` command. Type `/model` inside Codex to open its native picker. Pass through Codex args as usual, for example `fcc-codex exec "hello"`.
 
 ## Choose A Provider
 

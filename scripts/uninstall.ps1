@@ -11,6 +11,8 @@ $ErrorActionPreference = "Stop"
 $PackageName = "free-claude-code"
 $FccHomeDirname = ".fcc"
 $FccCommands = @(
+    "ll-server",
+    "ll-claude",
     "fcc-server",
     "fcc-claude",
     "fcc-codex",

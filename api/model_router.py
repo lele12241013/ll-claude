@@ -41,7 +41,28 @@ class ModelRouter:
     def __init__(self, settings: Settings):
         self._settings = settings
 
-    def resolve(self, claude_model_name: str) -> ResolvedModel:
+    def resolve(self, claude_model_name: str, agent_role: str | None = None) -> ResolvedModel:
+        # Per-agent model override has highest priority (skips tier/direct routing).
+        if agent_role:
+            agent_ref = self._resolve_agent_model_ref(agent_role)
+            if agent_ref is not None:
+                thinking_enabled = self._resolve_thinking(claude_model_name)
+                provider_id = parse_provider_type(agent_ref)
+                provider_model = parse_model_name(agent_ref)
+                logger.debug(
+                    "MODEL AGENT: '{}' role='{}' -> '{}'",
+                    claude_model_name,
+                    agent_role,
+                    agent_ref,
+                )
+                return ResolvedModel(
+                    original_model=claude_model_name,
+                    provider_id=provider_id,
+                    provider_model=provider_model,
+                    provider_model_ref=agent_ref,
+                    thinking_enabled=thinking_enabled,
+                )
+
         (
             direct_provider_id,
             direct_provider_model,
@@ -118,6 +139,19 @@ class ModelRouter:
             return self._settings.model_sonnet
         return self._settings.model
 
+    def _resolve_agent_model_ref(self, agent_role: str) -> str | None:
+        """Return the configured model ref for a named specialist agent, or None."""
+        _AGENT_MODEL_MAP: dict[str, str | None] = {
+            "orquestrador": self._settings.model_agent_orquestrador,
+            "frontend":     self._settings.model_agent_frontend,
+            "backend":      self._settings.model_agent_backend,
+            "revisor":      self._settings.model_agent_revisor,
+            "testador":     self._settings.model_agent_testador,
+            "documentador": self._settings.model_agent_documentador,
+            "executor":     self._settings.model_agent_executor,
+        }
+        return _AGENT_MODEL_MAP.get(agent_role.lower())
+
     def _resolve_thinking(self, claude_model_name: str) -> bool:
         """Resolve whether thinking is enabled for an incoming Claude model name."""
 
@@ -131,10 +165,10 @@ class ModelRouter:
         return self._settings.enable_model_thinking
 
     def resolve_messages_request(
-        self, request: MessagesRequest
+        self, request: MessagesRequest, agent_role: str | None = None
     ) -> RoutedMessagesRequest:
-        """Return an internal routed request context."""
-        resolved = self.resolve(request.model)
+        """Return an internal routed request context, with optional per-agent routing."""
+        resolved = self.resolve(request.model, agent_role=agent_role)
         routed = request.model_copy(deep=True)
         routed.model = resolved.provider_model
         return RoutedMessagesRequest(request=routed, resolved=resolved)

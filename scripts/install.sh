@@ -1,7 +1,8 @@
 #!/bin/sh
 set -eu
 
-REPO_GIT_URL="git+https://github.com/Alishahryar1/free-claude-code.git"
+# TODO: substitua pelo URL do seu repositório GitHub após fazer o upload
+REPO_GIT_URL="git+https://github.com/lele12241013/ll-claude.git"
 PYTHON_VERSION="3.14.0"
 MIN_UV_VERSION="0.11.0"
 UV_INSTALL_URL="https://astral.sh/uv/install.sh"
@@ -340,6 +341,6 @@ run uv python install "$PYTHON_VERSION"
 step "Installing or updating Free Claude Code"
 install_free_claude_code
 
-printf '\nFree Claude Code is installed. Start the proxy with: fcc-server\n'
-printf 'Run Claude Code with: fcc-claude\n'
-printf 'Run Codex with: fcc-codex\n'
+printf '\nInstalado! Inicie o proxy com:     ll-server\n'
+printf 'Inicie o multi-agente com:         ll-claude\n'
+printf '(os comandos fcc-server e fcc-claude ainda funcionam)\n'

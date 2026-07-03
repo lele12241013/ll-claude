@@ -108,6 +108,32 @@ class Settings(BaseSettings):
     model_sonnet: str | None = Field(default=None, validation_alias="MODEL_SONNET")
     model_haiku: str | None = Field(default=None, validation_alias="MODEL_HAIKU")
 
+    # ==================== Per-Agent Model Overrides ====================
+    # Each specialist agent can use a different provider/model.
+    # Use token suffix  <AUTH_TOKEN>:<agent>  (e.g. freecc:frontend)
+    # to tell the proxy which agent is making the request.
+    model_agent_orquestrador: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_ORQUESTRADOR"
+    )
+    model_agent_frontend: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_FRONTEND"
+    )
+    model_agent_backend: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_BACKEND"
+    )
+    model_agent_revisor: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_REVISOR"
+    )
+    model_agent_testador: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_TESTADOR"
+    )
+    model_agent_documentador: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_DOCUMENTADOR"
+    )
+    model_agent_executor: str | None = Field(
+        default=None, validation_alias="MODEL_AGENT_EXECUTOR"
+    )
+
     # ==================== Per-Provider Proxy ====================
     nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")
     open_router_proxy: str = Field(default="", validation_alias="OPENROUTER_PROXY")
@@ -263,6 +289,13 @@ class Settings(BaseSettings):
         "model_opus",
         "model_sonnet",
         "model_haiku",
+        "model_agent_orquestrador",
+        "model_agent_frontend",
+        "model_agent_backend",
+        "model_agent_revisor",
+        "model_agent_testador",
+        "model_agent_documentador",
+        "model_agent_executor",
         "enable_opus_thinking",
         "enable_sonnet_thinking",
         "enable_haiku_thinking",
@@ -336,7 +369,19 @@ class Settings(BaseSettings):
             )
         return v
 
-    @field_validator("model", "model_opus", "model_sonnet", "model_haiku")
+    @field_validator(
+        "model",
+        "model_opus",
+        "model_sonnet",
+        "model_haiku",
+        "model_agent_orquestrador",
+        "model_agent_frontend",
+        "model_agent_backend",
+        "model_agent_revisor",
+        "model_agent_testador",
+        "model_agent_documentador",
+        "model_agent_executor",
+    )
     @classmethod
     def validate_model_format(cls, v: str | None) -> str | None:
         if v is None:

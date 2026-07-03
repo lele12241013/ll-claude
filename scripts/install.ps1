@@ -12,7 +12,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$RepoGitUrl = "git+https://github.com/Alishahryar1/free-claude-code.git"
+# TODO: substitua pelo URL do seu repositório GitHub após fazer o upload
+$RepoGitUrl = "git+https://github.com/lele12241013/ll-claude.git"
 $PythonVersion = "3.14.0"
 $MinUvVersion = "0.11.0"
 $UvInstallUrl = "https://astral.sh/uv/install.ps1"
@@ -411,6 +412,7 @@ Write-Step "Installing or updating Free Claude Code"
 Install-FreeClaudeCode
 
 Write-Host ""
-Write-Host "Free Claude Code is installed. Start the proxy with: fcc-server"
-Write-Host "Run Claude Code with: fcc-claude"
-Write-Host "Run Codex with: fcc-codex"
+Write-Host ""
+Write-Host "Instalado! Inicie o proxy com:     ll-server"
+Write-Host "Inicie o multi-agente com:         ll-claude"
+Write-Host "(os comandos fcc-server e fcc-claude ainda funcionam)"

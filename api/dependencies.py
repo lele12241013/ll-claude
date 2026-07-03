@@ -94,9 +94,13 @@ def require_api_key(
     if header.lower().startswith("bearer "):
         token = header.split(" ", 1)[1].strip()
 
-    # Strip anything after the first colon to handle tokens with appended model names
+    # Extract optional agent role suffix from token (format: "basetoken:agent_role")
+    # Store the role in request.state so the model router can use it for per-agent routing.
+    agent_role: str | None = None
     if token and ":" in token:
-        token = token.split(":", 1)[0].strip()
+        base_token, _, role_suffix = token.partition(":")
+        token = base_token.strip()
+        agent_role = role_suffix.strip().lower() or None
 
     # Constant-time comparison to avoid leaking the configured token via
     # response-time differences on a per-byte mismatch (CWE-208).
@@ -104,3 +108,6 @@ def require_api_key(
         token.encode("utf-8"), anthropic_auth_token.encode("utf-8")
     ):
         raise HTTPException(status_code=401, detail="Invalid API key")
+
+    # Attach agent role to request state (None when no role suffix was provided).
+    request.state.agent_role = agent_role

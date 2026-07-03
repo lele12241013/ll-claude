@@ -48,10 +48,12 @@ class MessagesHandler:
         model_router: ModelRouter | None = None,
         token_counter: TokenCounter = get_token_count,
         provider_execution: ProviderExecutionService | None = None,
+        agent_role: str | None = None,
     ) -> None:
         self._settings = settings
         self._model_router = model_router or ModelRouter(settings)
         self._token_counter = token_counter
+        self._agent_role = agent_role
         self._provider_execution = provider_execution or ProviderExecutionService(
             settings,
             provider_getter,
@@ -66,7 +68,9 @@ class MessagesHandler:
         """Create an Anthropic-compatible message response."""
         try:
             require_non_empty_messages(request_data.messages)
-            routed = self._model_router.resolve_messages_request(request_data)
+            routed = self._model_router.resolve_messages_request(
+                request_data, agent_role=self._agent_role
+            )
             routed = self._apply_message_routing_policies(routed)
             self._reject_unsupported_server_tools(routed)
 

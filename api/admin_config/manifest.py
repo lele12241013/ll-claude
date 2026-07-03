@@ -86,6 +86,11 @@ SECTIONS: tuple[ConfigSectionSpec, ...] = (
         "Local Anthropic web_search and web_fetch behavior.",
     ),
     ConfigSectionSpec(
+        "agents",
+        "Agentes Especialistas",
+        "Modelo por agente. Use o token no formato  AUTH_TOKEN:nome  (ex: freecc:frontend).",
+    ),
+    ConfigSectionSpec(
         "diagnostics",
         "Diagnostics",
         "Logging and debugging flags.",
@@ -416,6 +421,56 @@ _NON_PROVIDER_FIELDS: tuple[ConfigFieldSpec, ...] = (
         "boolean",
         settings_attr="web_fetch_allow_private_networks",
         default="false",
+    ),
+    # ── Agentes Especialistas ──────────────────────────────────────────────────
+    ConfigFieldSpec(
+        "MODEL_AGENT_ORQUESTRADOR",
+        "Orquestrador (Agente de Conversa)",
+        "agents",
+        settings_attr="model_agent_orquestrador",
+        description="Modelo para o Orquestrador \u2013 recebe suas mensagens e distribui tarefas aos outros agentes. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_FRONTEND",
+        "Frontend (Programador Front-end)",
+        "agents",
+        settings_attr="model_agent_frontend",
+        description="Modelo para o agente Frontend. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_BACKEND",
+        "Backend (Programador Back-end)",
+        "agents",
+        settings_attr="model_agent_backend",
+        description="Modelo para o agente Backend. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_REVISOR",
+        "Revisor (Code Reviewer)",
+        "agents",
+        settings_attr="model_agent_revisor",
+        description="Modelo para o agente Revisor. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_TESTADOR",
+        "Testador (QA)",
+        "agents",
+        settings_attr="model_agent_testador",
+        description="Modelo para o agente Testador. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_DOCUMENTADOR",
+        "Documentador (Technical Writer)",
+        "agents",
+        settings_attr="model_agent_documentador",
+        description="Modelo para o agente Documentador. Deixe vazio para usar o modelo padr\u00e3o.",
+    ),
+    ConfigFieldSpec(
+        "MODEL_AGENT_EXECUTOR",
+        "Executor (DevOps)",
+        "agents",
+        settings_attr="model_agent_executor",
+        description="Modelo para o agente Executor/DevOps. Deixe vazio para usar o modelo padr\u00e3o.",
     ),
     ConfigFieldSpec(
         "DEBUG_PLATFORM_EDITS",
