@@ -86,6 +86,7 @@ async def _chat(
     payload = {
         "model": model,
         "max_tokens": 8096,
+        "stream": False,
         "system": _SYSTEM_PROMPTS[role],
         "messages": messages,
     }
@@ -95,7 +96,8 @@ async def _chat(
         "content-type": "application/json",
     }
     response = await client.post(url, json=payload, headers=headers, timeout=120)
-    response.raise_for_status()
+    if response.status_code != 200:
+        raise RuntimeError(f"HTTP {response.status_code}: {response.text[:300]}")
     data = response.json()
     return data["content"][0]["text"]
 
