@@ -142,26 +142,48 @@ def _write_orchestrator_context(
     work_dir: Path,
     board: Path,
     specialists: list[tuple[str, str]],
+    session: Path,
+    proxy_root_url: str,
+    base_token: str,
 ) -> None:
-    """Write AGENT_CONTEXT.md for the Orchestrator."""
+    """Write AGENT_CONTEXT.md for the Orchestrator with sub-agent spawn commands."""
     work_dir.mkdir(parents=True, exist_ok=True)
     spec_list = "\n".join(f"  - {n}: {r[:70]}…" if len(r) > 70 else f"  - {n}: {r}" for n, r in specialists)
+
+    # Build spawn command block for each specialist
+    spawn_lines = []
+    for i, (name, _role) in enumerate(specialists):
+        spec_dir = session / f"agent_{i + 1}_{name.lower()}"
+        token = f"{base_token}:{name.lower()}"
+        spawn_lines.append(
+            f"  # {name}\n"
+            f"  $env:ANTHROPIC_BASE_URL='{proxy_root_url}'; "
+            f"$env:ANTHROPIC_AUTH_TOKEN='{token}'; "
+            f"cd '{spec_dir}'; "
+            f"claude --print --dangerously-skip-permissions -p \"<TAREFA DO {name.upper()}>\""
+        )
+    spawn_block = "\n".join(spawn_lines)
+
     ctx = (
         f"# Agente: Orquestrador\n\n"
         f"## Sua função\n"
-        f"Você é o agente de conversa e coordenador da equipe.\n"
-        f"O usuário fala com você. Você analisa os pedidos, divide em subtarefas\n"
-        f"e as distribui para os especialistas via quadro de mensagens.\n\n"
+        f"Você é o coordenador da equipe. O usuário fala APENAS com você.\n"
+        f"Você analisa os pedidos, divide em subtarefas e EXECUTA os especialistas\n"
+        f"automaticamente usando o comando bash abaixo — sem precisar de intervenção humana.\n\n"
         f"## Sua equipe de especialistas\n{spec_list}\n\n"
-        f"## Quadro de mensagens compartilhado\n{board}\n\n"
-        f"## Como coordenar\n"
+        f"## Como spawnar um especialista automaticamente\n"
+        f"Use a ferramenta Bash com o comando PowerShell abaixo, substituindo <TAREFA>:\n\n"
+        f"```powershell\n"
+        f"{spawn_block}\n"
+        f"```\n\n"
+        f"O especialista vai responder no stdout. Colete a saída e consolide.\n\n"
+        f"## Fluxo completo\n"
         f"1. Receba o pedido do usuário.\n"
-        f"2. Planeje quais especialistas precisam agir.\n"
-        f"3. Escreva no quadro as tarefas no formato:\n"
-        f"     [TAREFA para Frontend]: implemente o componente de login\n"
-        f"     [TAREFA para Backend]: crie o endpoint POST /auth/login\n"
-        f"4. Monitore o quadro para coletar os resultados ([NomeDoAgente CONCLUÍDO]).\n"
-        f"5. Consolide os resultados e responda ao usuário.\n\n"
+        f"2. Decida quais especialistas são necessários.\n"
+        f"3. Execute cada especialista via Bash (pode rodar em paralelo com múltiplas chamadas).\n"
+        f"4. Leia o stdout de cada um.\n"
+        f"5. Consolide os resultados e apresente ao usuário.\n\n"
+        f"## Quadro de mensagens (alternativa)\n{board}\n\n"
         f"## Seu diretório de trabalho\n{work_dir}\n"
     )
     (work_dir / "AGENT_CONTEXT.md").write_text(ctx, encoding="utf-8")
@@ -259,15 +281,21 @@ def launch(argv: list[str] | None = None) -> None:
     session = _session_dir(resume)
     board   = _board_file(session)
 
+    base_token = claude_auth_token(settings.anthropic_auth_token)
+
     orch_work_dir = session / "agent_0_orquestrador"
-    _write_orchestrator_context(orch_work_dir, board, _SPECIALISTS)
+    _write_orchestrator_context(
+        orch_work_dir, board, _SPECIALISTS,
+        session=session,
+        proxy_root_url=proxy_root_url,
+        base_token=base_token,
+    )
 
     for i, (name, role) in enumerate(_SPECIALISTS):
         work_dir = session / f"agent_{i + 1}_{name.lower()}"
         _write_specialist_context(work_dir, name, role, board, _SPECIALISTS)
 
     # ── open specialist tabs ──────────────────────────────────────────────────
-    base_token = claude_auth_token(settings.anthropic_auth_token)
 
     print("\033[1m=== ll-claude: Sistema Multi-Agente ===\033[0m")
     print(f"  Workspace : {session}")
