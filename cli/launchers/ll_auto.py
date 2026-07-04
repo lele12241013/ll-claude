@@ -80,13 +80,15 @@ async def _chat(
     messages: list[dict],
     model: str = "claude-sonnet-4-20250514",
 ) -> str:
-    """Send a chat request to the proxy for a specific agent role."""
+    """Send a chat request to the proxy for a specific agent role, parsing SSE stream."""
+    import json as _json
+
     token = f"{base_token}:{role}"
     url = f"{proxy_root_url.rstrip('/')}/v1/messages"
     payload = {
         "model": model,
         "max_tokens": 8096,
-        "stream": False,
+        "stream": True,
         "system": _SYSTEM_PROMPTS[role],
         "messages": messages,
     }
@@ -95,11 +97,26 @@ async def _chat(
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
     }
-    response = await client.post(url, json=payload, headers=headers, timeout=120)
-    if response.status_code != 200:
-        raise RuntimeError(f"HTTP {response.status_code}: {response.text[:300]}")
-    data = response.json()
-    return data["content"][0]["text"]
+    text_parts: list[str] = []
+    async with client.stream("POST", url, json=payload, headers=headers, timeout=120) as response:
+        if response.status_code != 200:
+            body = await response.aread()
+            raise RuntimeError(f"HTTP {response.status_code}: {body[:300]}")
+        async for line in response.aiter_lines():
+            if not line.startswith("data:"):
+                continue
+            raw = line[5:].strip()
+            if not raw or raw == "[DONE]":
+                continue
+            try:
+                event = _json.loads(raw)
+            except _json.JSONDecodeError:
+                continue
+            if event.get("type") == "content_block_delta":
+                delta = event.get("delta", {})
+                if delta.get("type") == "text_delta":
+                    text_parts.append(delta.get("text", ""))
+    return "".join(text_parts)
 
 
 # ── task parsing ──────────────────────────────────────────────────────────────
