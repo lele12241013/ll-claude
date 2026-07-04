@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import base64
+import ctypes
 import os
 import shutil
 import subprocess
@@ -252,6 +253,26 @@ def _open_specialist_tabs(
             )
 
 
+def _is_admin() -> bool:
+    """Return True if the current process has administrator privileges."""
+    try:
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:
+        return False
+
+
+def _relaunch_as_admin(args: list[str]) -> None:
+    """Re-launch the current process with UAC elevation and exit."""
+    executable = sys.executable
+    # Build the argument string: -m cli.launchers.ll_claude <args>
+    module_args = ["-m", "cli.launchers.ll_claude"] + args
+    params = " ".join(f'"{a}"' if " " in a else a for a in module_args)
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", executable, params, None, 1  # SW_SHOWNORMAL
+    )
+    raise SystemExit(0)
+
+
 # ── main entry point ──────────────────────────────────────────────────────────
 
 def launch(argv: list[str] | None = None) -> None:
@@ -259,10 +280,17 @@ def launch(argv: list[str] | None = None) -> None:
 
     args = list(sys.argv[1:] if argv is None else argv)
 
+    # Elevate to admin if not already (Windows only)
+    if sys.platform == "win32" and "--no-elevate" not in args and not _is_admin():
+        print("Solicitando privilégios de administrador...")
+        _relaunch_as_admin(args + ["--no-elevate"])
+
     # Parse --resume flag (consumed here, not passed to claude)
     resume = "--resume" in args
     if resume:
         args.remove("--resume")
+    if "--no-elevate" in args:
+        args.remove("--no-elevate")
 
     settings      = get_settings()
     proxy_root_url = local_proxy_root_url(settings)
