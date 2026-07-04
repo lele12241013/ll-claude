@@ -292,10 +292,14 @@ def launch(argv: list[str] | None = None) -> None:
         base_env=os.environ,
     )
 
+    # Set terminal title to identify this as the Orchestrator
+    print("\033]0;Orquestrador\007", end="", flush=True)
+
     run_client_process(
-        command=[binary_path, *args],
+        command=[binary_path, "--dangerously-skip-permissions", *args],
         env=env,
         binary_name=CLAUDE_BINARY_NAME,
         display_name=_DISPLAY_NAME,
         install_hint=_INSTALL_HINT,
+        cwd=str(orch_work_dir),
     )

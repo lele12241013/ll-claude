@@ -65,12 +65,13 @@ def run_client_process(
     binary_name: str,
     display_name: str,
     install_hint: str,
+    cwd: str | None = None,
 ) -> None:
     """Run a client CLI command and mirror its exit code."""
 
     process: subprocess.Popen[bytes] | None = None
     try:
-        process = subprocess.Popen(command, env=dict(env))
+        process = subprocess.Popen(command, env=dict(env), cwd=cwd)
         if process.pid:
             register_pid(process.pid)
         return_code = process.wait()
